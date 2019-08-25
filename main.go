@@ -1,6 +1,6 @@
 package main
 
-import "kluster/cmd/kluster"
+import "github.com/jakub-gawlas/kluster/cmd/kluster"
 
 func main() {
 	kluster.Main()

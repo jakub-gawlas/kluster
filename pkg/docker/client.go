@@ -2,7 +2,6 @@ package docker
 
 import (
 	"os"
-
 	"os/exec"
 )
 

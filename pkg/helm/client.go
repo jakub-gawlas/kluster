@@ -1,11 +1,12 @@
 package helm
 
 import (
-	"kluster/pkg/kubectl"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/jakub-gawlas/kluster/pkg/kubectl"
 )
 
 type Client struct {
