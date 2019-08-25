@@ -1,0 +1,23 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ .Values.app.worker.name }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.app.worker.name }}
+spec:
+  replicas: {{ .Values.app.worker.deployment.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Values.app.worker.name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Values.app.worker.name }}
+    spec:
+      containers:
+        - name: {{ .Values.app.worker.name }}
+          image: {{ .Values.app.worker.image.name }}:{{ .Values.app.worker.image.tag }}
+          imagePullPolicy: {{ .Values.app.worker.image.pullPolicy }}
+          env:
+            - name: INTERVAL
+              value: {{ .Values.app.worker.env.interval }}
