@@ -31,7 +31,9 @@ func (chart Chart) Deploy(cluster *cluster.Cluster, installed bool) error {
 	h := helm.New(kubeconfig)
 	if installed {
 		if err := h.Upgrade(chart.Name, chart.Path, sets); err != nil {
-			return err
+			if err := h.Install(chart.Name, chart.Path, sets); err != nil {
+				return err
+			}
 		}
 	} else {
 		if err := h.Install(chart.Name, chart.Path, sets); err != nil {
