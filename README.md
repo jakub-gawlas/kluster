@@ -9,6 +9,12 @@ Provision local Kubernetes cluster with application stack defined as a code.
 - go
 - kubectl
 
+## Installation
+
+```sh
+go get github.com/jakub-gawlas/kluster
+```
+
 ## Config
 
 Example config file (by default is loaded from `cluster.yaml`):
