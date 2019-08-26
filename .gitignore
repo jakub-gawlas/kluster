@@ -2,5 +2,6 @@
 .kube
 .idea
 kluster
+!kluster/
 test/server/server
 test/worker/worker
