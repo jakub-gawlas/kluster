@@ -36,6 +36,11 @@ spec:
           env:
             - name: PORT
               value: {{ .Values.app.server.port | quote }}
+            - name: SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mysecret
+                  key: data
           ports:
             - name: http
               containerPort: {{ .Values.app.server.port }}

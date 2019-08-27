@@ -9,8 +9,9 @@ import (
 const DefaultConfigPath = "cluster.yaml"
 
 type Config struct {
-	Name   string  `yaml:"name"`
-	Charts []Chart `yaml:"charts,omitempty"`
+	Name      string   `yaml:"name"`
+	Charts    []Chart  `yaml:"charts,omitempty"`
+	Resources []string `yaml:"resources,omitempty"`
 }
 
 func LoadConfig(path string) (*Config, error) {

@@ -13,7 +13,13 @@ func main() {
 	}
 	http.HandleFunc("/hello", func(w http.ResponseWriter, req *http.Request) {
 		fmt.Println("INFO: handle /hello " + req.Method)
-		if _, err := w.Write([]byte("Hello world!")); err != nil {
+		if _, err := w.Write([]byte("Hello world!!!")); err != nil {
+			fmt.Println("ERR:", err)
+		}
+	})
+	http.HandleFunc("/secret", func(w http.ResponseWriter, req *http.Request) {
+		fmt.Println("INFO: handle /secret " + req.Method)
+		if _, err := w.Write([]byte(os.Getenv("SECRET"))); err != nil {
 			fmt.Println("ERR:", err)
 		}
 	})
