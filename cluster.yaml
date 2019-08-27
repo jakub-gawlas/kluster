@@ -11,6 +11,6 @@ charts:
     path: helm/test
     apps:
       - name: worker
-        path: test/worker/main.go
+        dockerfile: worker.Dockerfile
       - name: server
-        path: test/server/main.go
+        dockerfile: server.Dockerfile

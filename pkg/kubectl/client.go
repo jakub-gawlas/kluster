@@ -1,6 +1,8 @@
 package kubectl
 
 import (
+	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 )
@@ -20,9 +22,13 @@ func New(kubeconfigPath string) *Client {
 }
 
 func (cli *Client) Exec(arg ...string) error {
+	var stderr bytes.Buffer
 	cmd := exec.Command(kubectlCmd, arg...)
 	cmd.Env = []string{"KUBECONFIG=" + cli.kubeconfig}
 	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf(stderr.String())
+	}
+	return nil
 }

@@ -1,10 +1,14 @@
 package helm
 
 import (
+	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/jakub-gawlas/kluster/pkg/kubectl"
 )
@@ -26,24 +30,34 @@ func New(kubeconfigPath string) *Client {
 }
 
 func (cli *Client) Init() error {
+	var stderr bytes.Buffer
 	cmd := exec.Command(helmCmd, "init")
 	cmd.Env = []string{"KUBECONFIG=" + cli.kubeconfig}
 	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return err
+		return errors.Wrap(fmt.Errorf(stderr.String()), "helm init")
 	}
 
 	k := kubectl.New(cli.kubeconfig)
-	return k.Exec("create", "clusterrolebinding", "add-on-cluster-admin", "--clusterrole=cluster-admin", "--serviceaccount=kube-system:default")
+	if err := k.Exec("create", "clusterrolebinding", "add-on-cluster-admin", "--clusterrole=cluster-admin", "--serviceaccount=kube-system:default"); err != nil {
+		return errors.Wrap(err, "create helm role")
+	}
+
+	return nil
 }
 
 func (cli *Client) Upgrade(name, path string, sets map[string]string) error {
+	var stderr bytes.Buffer
 	cmd := exec.Command(helmCmd, "upgrade", "--set", createSet(sets), name, path)
 	cmd.Env = []string{"KUBECONFIG=" + cli.kubeconfig}
 	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf(stderr.String())
+	}
+
+	return nil
 }
 
 func (cli *Client) Install(name, path string, sets map[string]string) error {
@@ -62,11 +76,16 @@ func (cli *Client) Install(name, path string, sets map[string]string) error {
 }
 
 func (cli *Client) install(name, path string, sets map[string]string) error {
+	var stderr bytes.Buffer
 	cmd := exec.Command(helmCmd, "install", "--name", name, "--set", createSet(sets), path)
 	cmd.Env = []string{"KUBECONFIG=" + cli.kubeconfig}
 	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf(stderr.String())
+	}
+
+	return nil
 }
 
 func createSet(sets map[string]string) string {

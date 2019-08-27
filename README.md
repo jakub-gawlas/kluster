@@ -6,7 +6,6 @@ Provision local Kubernetes cluster with application stack defined as a code.
 
 - Docker
 - Helm
-- go
 - kubectl
 
 ## Installation
@@ -33,19 +32,17 @@ charts:
     path: helm/test
     apps:
       - name: worker
-        path: test/worker/main.go
+        dockerfile: worker.Dockerfile
 ```
 
-For app `worker` are required files in root directory:
-- `worker.Dockerfile`
-- `worker.VERSION`
+Application expects
 
 ## CLI
 
 ### deploy
 
 Provisions new local cluster with using KinD (Kubernetes in Docker) if not already exists.
-Builds defined applications and install helm charts.
+Builds defined docker images and install helm charts.
 
 Flags:
 - **config** *(optional)* - path to config file (default `cluster.yaml`)

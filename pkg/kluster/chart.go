@@ -4,7 +4,10 @@ import (
 	"fmt"
 
 	"github.com/jakub-gawlas/kluster/pkg/cluster"
+	"github.com/jakub-gawlas/kluster/pkg/docker"
 	"github.com/jakub-gawlas/kluster/pkg/helm"
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 type Chart struct {
@@ -19,23 +22,22 @@ func (chart Chart) Deploy(cluster *cluster.Cluster, installed bool) error {
 		return err
 	}
 
-	if err := chart.prepareApps(cluster); err != nil {
-		return err
-	}
-
-	sets, err := chart.setValues()
+	fmt.Printf("\nProcessing helm chart %s 📊", chart.Name)
+	sets, err := chart.prepareApps(cluster)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "prepare apps")
 	}
 
 	h := helm.New(kubeconfig)
 	if installed {
+		fmt.Print("\n↳ Upgrading ⬆")
 		if err := h.Upgrade(chart.Name, chart.Path, sets); err != nil {
 			if err := h.Install(chart.Name, chart.Path, sets); err != nil {
 				return err
 			}
 		}
 	} else {
+		fmt.Print("\n↳ Installing 🍳")
 		if err := h.Install(chart.Name, chart.Path, sets); err != nil {
 			return err
 		}
@@ -44,39 +46,43 @@ func (chart Chart) Deploy(cluster *cluster.Cluster, installed bool) error {
 	return nil
 }
 
-func (chart Chart) prepareApps(cluster *cluster.Cluster) error {
+func (chart Chart) prepareApps(cluster *cluster.Cluster) (sets map[string]string, err error) {
+	cli := docker.New()
+	defer func() {
+		if err := cli.Cleanup(); err != nil {
+			log.Errorf("cleanup docker client: %v", err)
+		}
+	}()
+
+	sets = map[string]string{}
 	for _, app := range chart.Apps {
-		if err := app.BuildBinary(); err != nil {
-			return err
-		}
+		fmt.Printf("\n↳ Processing app %s 💾", app.Name)
 
-		if err := app.BuildImage(); err != nil {
-			return err
-		}
-
-		imageName, err := app.ImageName()
+		fmt.Print("\n ↳ Building image 👷")
+		image, err := cli.BuildImageWithChecksum(app.Dockerfile, app.Name)
 		if err != nil {
-			return err
+			return nil, errors.Wrapf(err, "build image for app: %s", app.Name)
 		}
-		if err := cluster.LoadImage(imageName); err != nil {
-			return err
-		}
-	}
-	return nil
-}
 
-func (chart Chart) setValues() (map[string]string, error) {
-	sets := map[string]string{}
-	for _, app := range chart.Apps {
-		tagKey := fmt.Sprintf("app.%s.image.tag", app.Name)
-		tag, err := app.ImageTag()
-		if err != nil {
-			return nil, err
+		fmt.Print("\n ↳ Loading image to cluster ⤵")
+		if err := cluster.LoadImage(image.FullName); err != nil {
+			return nil, errors.Wrapf(err, "load image: %s to cluster", image)
 		}
-		sets[tagKey] = tag
 
-		pullPolicyKey := fmt.Sprintf("app.%s.image.pullPolicy", app.Name)
-		sets[pullPolicyKey] = "IfNotPresent"
+		sets = extendSets(sets, app.Name, image.Name, image.Tag)
 	}
 	return sets, nil
+}
+
+func extendSets(sets map[string]string, appName, imageName, imageTag string) map[string]string {
+	nameKey := fmt.Sprintf("app.%s.image.name", appName)
+	sets[nameKey] = imageName
+
+	tagKey := fmt.Sprintf("app.%s.image.tag", appName)
+	sets[tagKey] = imageTag
+
+	pullPolicyKey := fmt.Sprintf("app.%s.image.pullPolicy", appName)
+	sets[pullPolicyKey] = "IfNotPresent"
+
+	return sets
 }
