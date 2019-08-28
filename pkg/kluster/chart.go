@@ -22,7 +22,6 @@ func (chart Chart) Deploy(cluster *cluster.Cluster, installed bool) error {
 		return err
 	}
 
-	fmt.Printf("\nProcessing helm chart: %s 📊", chart.Name)
 	sets, err := chart.prepareApps(cluster)
 	if err != nil {
 		return errors.Wrap(err, "prepare apps")
@@ -30,14 +29,14 @@ func (chart Chart) Deploy(cluster *cluster.Cluster, installed bool) error {
 
 	h := helm.New(kubeconfig)
 	if installed {
-		fmt.Print("\n↳ Upgrading ⬆")
+		fmt.Printf("\nUpgrading helm chart: %s ⬆", chart.Name)
 		if err := h.Upgrade(chart.Name, chart.Path, sets); err != nil {
 			if err := h.Install(chart.Name, chart.Path, sets); err != nil {
 				return err
 			}
 		}
 	} else {
-		fmt.Print("\n↳ Installing 👷")
+		fmt.Printf("\nInstalling helm chart: %s 👷", chart.Name)
 		if err := h.Install(chart.Name, chart.Path, sets); err != nil {
 			return err
 		}
@@ -56,19 +55,17 @@ func (chart Chart) prepareApps(cluster *cluster.Cluster) (sets map[string]string
 
 	sets = map[string]string{}
 	for _, app := range chart.Apps {
-		fmt.Printf("\n↳ Processing app: %s 💾", app.Name)
-
 		if err := app.Prepare(); err != nil {
 			return nil, err
 		}
 
-		fmt.Print("\n ↳ Building image 🧩")
+		fmt.Printf("\nBuilding image for app: %s 🧩", app.Name)
 		image, err := cli.BuildImageWithChecksum(app.Dockerfile, app.Name)
 		if err != nil {
 			return nil, errors.Wrapf(err, "build image for app: %s", app.Name)
 		}
 
-		fmt.Print("\n ↳ Loading image to cluster ⤵")
+		fmt.Printf("\nLoading image for app: %s to cluster ⤵", app.Name)
 		if err := cluster.LoadImage(image.FullName); err != nil {
 			return nil, errors.Wrapf(err, "load image: %s to cluster", image)
 		}

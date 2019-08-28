@@ -1,15 +1,13 @@
 package kluster
 
 import (
-	"io/ioutil"
-
+	"github.com/jakub-gawlas/kluster/pkg/yaml/resolver"
 	"github.com/pkg/errors"
 
 	"github.com/jakub-gawlas/kluster/pkg/kubectl"
 
 	"github.com/jakub-gawlas/kluster/pkg/cluster"
 	"github.com/jakub-gawlas/kluster/pkg/helm"
-	"github.com/jakub-gawlas/kluster/pkg/yaml"
 )
 
 type Kluster struct {
@@ -82,14 +80,9 @@ func (k Kluster) deployResources() error {
 	}
 
 	for _, path := range k.cfg.Resources {
-		content, err := ioutil.ReadFile(path)
+		resolved, err := resolver.ResolveFile(path)
 		if err != nil {
-			return errors.Wrapf(err, "read resource file: %s", path)
-		}
-
-		resolved, err := yaml.ResolveRefs(content)
-		if err != nil {
-			return errors.Wrapf(err, "resolve references for resource: %s", path)
+			return errors.Wrapf(err, "resolve references in resource: %s", path)
 		}
 
 		kube := kubectl.New(kubeconfig)

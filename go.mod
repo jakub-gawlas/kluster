@@ -7,6 +7,7 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/sirupsen/logrus v1.4.1
 	github.com/spf13/cobra v0.0.5
+	github.com/stretchr/testify v1.3.0
 	gopkg.in/yaml.v2 v2.2.2
 	sigs.k8s.io/kind v0.5.1
 )

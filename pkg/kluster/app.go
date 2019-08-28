@@ -18,9 +18,9 @@ func (app App) Prepare() error {
 		return nil
 	}
 
-	fmt.Print("\n ↳ Before build image ⚙")
+	fmt.Printf("\nExecute before build scripts for app: %s ⚙", app.Name)
 	for _, script := range app.BeforeBuild {
-		fmt.Printf("\n  ↳ %s 🚀", script)
+		fmt.Printf("\n↳ %s 🚀", script)
 		out, err := run(script)
 		if err != nil {
 			return err
