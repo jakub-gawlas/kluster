@@ -6,13 +6,15 @@ nodes:
     extraPortMappings:
       - containerPort: 30001
         hostPort: 3001
+resources:
+  - test/cluster/secret.yaml
 charts:
   - name: test
     path: helm/test
     apps:
       - name: worker
         dockerfile: worker.Dockerfile
+        before_build:
+          - echo test
       - name: server
         dockerfile: server.Dockerfile
-resources:
-  - test/cluster/secret.yaml

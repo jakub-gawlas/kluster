@@ -22,7 +22,7 @@ func (chart Chart) Deploy(cluster *cluster.Cluster, installed bool) error {
 		return err
 	}
 
-	fmt.Printf("\nProcessing helm chart %s 📊", chart.Name)
+	fmt.Printf("\nProcessing helm chart: %s 📊", chart.Name)
 	sets, err := chart.prepareApps(cluster)
 	if err != nil {
 		return errors.Wrap(err, "prepare apps")
@@ -37,7 +37,7 @@ func (chart Chart) Deploy(cluster *cluster.Cluster, installed bool) error {
 			}
 		}
 	} else {
-		fmt.Print("\n↳ Installing 🍳")
+		fmt.Print("\n↳ Installing 👷")
 		if err := h.Install(chart.Name, chart.Path, sets); err != nil {
 			return err
 		}
@@ -56,9 +56,13 @@ func (chart Chart) prepareApps(cluster *cluster.Cluster) (sets map[string]string
 
 	sets = map[string]string{}
 	for _, app := range chart.Apps {
-		fmt.Printf("\n↳ Processing app %s 💾", app.Name)
+		fmt.Printf("\n↳ Processing app: %s 💾", app.Name)
 
-		fmt.Print("\n ↳ Building image 👷")
+		if err := app.Prepare(); err != nil {
+			return nil, err
+		}
+
+		fmt.Print("\n ↳ Building image 🧩")
 		image, err := cli.BuildImageWithChecksum(app.Dockerfile, app.Name)
 		if err != nil {
 			return nil, errors.Wrapf(err, "build image for app: %s", app.Name)

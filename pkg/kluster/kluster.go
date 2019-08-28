@@ -76,26 +76,27 @@ func (k Kluster) Destroy() error {
 }
 
 func (k Kluster) deployResources() error {
+	kubeconfig, err := k.cluster.KubeConfigPath()
+	if err != nil {
+		return errors.Wrap(err, "get kubeconfig path")
+	}
+
 	for _, path := range k.cfg.Resources {
 		content, err := ioutil.ReadFile(path)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "read resource file: %s", path)
 		}
 
 		resolved, err := yaml.ResolveRefs(content)
 		if err != nil {
-			return err
-		}
-
-		kubeconfig, err := k.cluster.KubeConfigPath()
-		if err != nil {
-			return err
+			return errors.Wrapf(err, "resolve references for resource: %s", path)
 		}
 
 		kube := kubectl.New(kubeconfig)
 		if err := kube.ExecStdinData(resolved, "apply", "-f", "-"); err != nil {
-			return err
+			return errors.Wrapf(err, "execute kubectl for resource: %s", path)
 		}
 	}
+
 	return nil
 }
