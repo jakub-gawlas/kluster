@@ -23,6 +23,8 @@ const (
 	installRetryInterval = time.Second * 15
 )
 
+var execCommand = exec.Command
+
 func New(kubeconfigPath string) *Client {
 	return &Client{
 		kubeconfig: kubeconfigPath,
@@ -31,7 +33,7 @@ func New(kubeconfigPath string) *Client {
 
 func (cli *Client) Init() error {
 	var stderr bytes.Buffer
-	cmd := exec.Command(helmCmd, "init")
+	cmd := execCommand(helmCmd, "init")
 	cmd.Env = []string{"KUBECONFIG=" + cli.kubeconfig}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = &stderr
@@ -48,8 +50,13 @@ func (cli *Client) Init() error {
 }
 
 func (cli *Client) Upgrade(name, path string, sets map[string]string) error {
+	args := []string{"upgrade", name, path}
+	if len(sets) > 0 {
+		args = append(args, "--set", createSet(sets))
+	}
+
 	var stderr bytes.Buffer
-	cmd := exec.Command(helmCmd, "upgrade", "--set", createSet(sets), name, path)
+	cmd := execCommand(helmCmd, args...)
 	cmd.Env = []string{"KUBECONFIG=" + cli.kubeconfig}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = &stderr
