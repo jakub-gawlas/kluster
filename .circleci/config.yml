@@ -9,7 +9,6 @@ jobs:
 
     steps:
       - checkout
-
       - run: mkdir -p $TEST_RESULTS
       - run:
           name: Run unit tests
@@ -23,8 +22,24 @@ jobs:
       - store_test_results:
           path: /tmp/test-results
 
+  release:
+    docker:
+      - image: circleci/golang:1.12
+
+    steps:
+      - checkout
+      - run: curl -sL https://git.io/goreleaser | bash
+
 workflows:
   version: 2
   build:
     jobs:
       - build
+  release:
+    jobs:
+      - release:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*(-.*)*/
