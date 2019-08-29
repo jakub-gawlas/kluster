@@ -12,6 +12,7 @@ import (
 )
 
 func TestResolver_ResolveRefs(t *testing.T) {
+	// Reference to exists file
 	input, err := ioutil.ReadFile("test/input.yaml")
 	assert.NoError(t, err)
 

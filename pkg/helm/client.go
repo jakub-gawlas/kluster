@@ -3,7 +3,6 @@ package helm
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"os/exec"
 	"sort"
 	"strings"
@@ -40,7 +39,6 @@ func (cli *Client) Init() error {
 	var stderr bytes.Buffer
 	cmd := execCommand(helmCmd, "init")
 	cmd.Env = []string{"KUBECONFIG=" + cli.kubeconfig}
-	cmd.Stdout = os.Stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
 		return errors.Wrap(fmt.Errorf(stderr.String()), "helm init")
@@ -62,7 +60,6 @@ func (cli *Client) Upgrade(name, path string, sets map[string]string) error {
 	var stderr bytes.Buffer
 	cmd := execCommand(helmCmd, args...)
 	cmd.Env = []string{"KUBECONFIG=" + cli.kubeconfig}
-	cmd.Stdout = os.Stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf(stderr.String())
@@ -103,7 +100,6 @@ func (cli *Client) install(name, path string, sets map[string]string) error {
 	var stderr bytes.Buffer
 	cmd := execCommand(helmCmd, args...)
 	cmd.Env = []string{"KUBECONFIG=" + cli.kubeconfig}
-	cmd.Stdout = os.Stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf(stderr.String())
