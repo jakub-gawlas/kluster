@@ -9,6 +9,7 @@ import (
 )
 
 func TestResolveFile(t *testing.T) {
+	// Exists file
 	expectedOutputRaw, err := ioutil.ReadFile("test/output.yaml")
 	assert.NoError(t, err)
 
@@ -22,4 +23,9 @@ func TestResolveFile(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, expectedOutput, actualOutput)
+
+	// Non exists file
+	actualOutputRaw, err = ResolveFile("test/non_exists.yaml")
+	assert.Nil(t, actualOutputRaw)
+	assert.Error(t, err)
 }

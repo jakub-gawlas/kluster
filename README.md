@@ -1,5 +1,7 @@
 # Kluster
 
+[![CircleCI](https://circleci.com/gh/jakub-gawlas/kluster.svg?style=svg)](https://circleci.com/gh/jakub-gawlas/kluster)
+
 Provision local Kubernetes cluster with application stack defined as a code.
 
 ## Prerequisites

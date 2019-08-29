@@ -1,7 +1,14 @@
+# user space
 .docker
 .helm
 .kube
 .idea
+
+# coverage
+cover.out
+cover.html
+
+# binaries
 kluster
 !kluster/
 test/server/server
