@@ -33,14 +33,15 @@ func (cli *Client) Exec(arg ...string) error {
 	return nil
 }
 
-func (cli *Client) ExecStdinData(data []byte, arg ...string) error {
-	var stderr bytes.Buffer
+func (cli *Client) ExecStdinData(data []byte, arg ...string) ([]byte, error) {
+	var stdout, stderr bytes.Buffer
 	cmd := execCommand(kubectlCmd, arg...)
 	cmd.Env = []string{"KUBECONFIG=" + cli.kubeconfig}
+	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	cmd.Stdin = bytes.NewReader(data)
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf(stderr.String())
+		return nil, fmt.Errorf(stderr.String())
 	}
-	return nil
+	return stdout.Bytes(), nil
 }

@@ -1,6 +1,8 @@
 package kluster
 
 import (
+	"fmt"
+
 	"github.com/jakub-gawlas/kluster/pkg/yaml/resolver"
 	"github.com/pkg/errors"
 
@@ -35,7 +37,7 @@ func (k Kluster) KubeconfigPath() string {
 	}
 	path, err := k.cluster.KubeConfigPath()
 	if err != nil {
-		panic("get kubeconfig path before create cluster:" + err.Error())
+		panic("cannot get kubeconfig path to local cluster:" + err.Error())
 	}
 	k.kubeconfigPath = path
 	return path
@@ -91,9 +93,12 @@ func (k Kluster) deployResources() error {
 		}
 
 		kube := kubectl.New(k.KubeconfigPath())
-		if err := kube.ExecStdinData(resolved, "apply", "-f", "-"); err != nil {
+		result, err := kube.ExecStdinData(resolved, "apply", "-f", "-")
+		if err != nil {
 			return errors.Wrapf(err, "execute kubectl for resource: %s", path)
 		}
+		fmt.Printf("Deployed resource: %s\n", path)
+		fmt.Println(string(result))
 	}
 
 	return nil

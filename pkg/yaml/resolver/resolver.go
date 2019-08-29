@@ -107,13 +107,11 @@ func toReference(value interface{}) (reference, bool) {
 	if !ok {
 		return reference{}, false
 	}
-	fmt.Println("M", m)
 
 	secret, ok := m[ReferenceSecret]
 	if !ok {
 		return reference{}, false
 	}
-	fmt.Println("V", secret)
 
 	return reference{
 		Type:  ReferenceSecret,
