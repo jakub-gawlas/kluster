@@ -22,17 +22,23 @@ func New(cfgPath string) (*Kluster, error) {
 	if err != nil {
 		return nil, err
 	}
-	c := cluster.New(cfg.Name)
-	kubeconfig, err := c.KubeConfigPath()
-	if err != nil {
-		return nil, err
-	}
 	return &Kluster{
-		cluster:        cluster.New(cfg.Name),
-		cfg:            cfg,
-		cfgPath:        cfgPath,
-		kubeconfigPath: kubeconfig,
+		cluster: cluster.New(cfg.Name),
+		cfg:     cfg,
+		cfgPath: cfgPath,
 	}, nil
+}
+
+func (k Kluster) KubeconfigPath() string {
+	if k.kubeconfigPath != "" {
+		return k.kubeconfigPath
+	}
+	path, err := k.cluster.KubeConfigPath()
+	if err != nil {
+		panic("get kubeconfig path before create cluster:" + err.Error())
+	}
+	k.kubeconfigPath = path
+	return path
 }
 
 func (k Kluster) Name() string {
@@ -53,8 +59,8 @@ func (k Kluster) Deploy() error {
 		if err := k.cluster.Create(k.cfgPath); err != nil {
 			return err
 		}
-		kube := kubectl.New(k.kubeconfigPath)
-		h := helm.New(kube, k.kubeconfigPath)
+		kube := kubectl.New(k.KubeconfigPath())
+		h := helm.New(kube, k.KubeconfigPath())
 		if err := h.Init(); err != nil {
 			return err
 		}
@@ -78,18 +84,13 @@ func (k Kluster) Destroy() error {
 }
 
 func (k Kluster) deployResources() error {
-	kubeconfig, err := k.cluster.KubeConfigPath()
-	if err != nil {
-		return errors.Wrap(err, "get kubeconfig path")
-	}
-
 	for _, path := range k.cfg.Resources {
 		resolved, err := resolver.ResolveFile(path)
 		if err != nil {
 			return errors.Wrapf(err, "resolve references in resource: %s", path)
 		}
 
-		kube := kubectl.New(kubeconfig)
+		kube := kubectl.New(k.KubeconfigPath())
 		if err := kube.ExecStdinData(resolved, "apply", "-f", "-"); err != nil {
 			return errors.Wrapf(err, "execute kubectl for resource: %s", path)
 		}

@@ -28,5 +28,10 @@ func runE(flags *flagpole) error {
 	if err != nil {
 		return err
 	}
-	return k.Destroy()
+
+	if err := k.Destroy(); err != nil {
+		return err
+	}
+
+	return nil
 }
