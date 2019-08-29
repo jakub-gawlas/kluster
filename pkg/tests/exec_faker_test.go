@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -33,7 +34,7 @@ func TestExecFaker(t *testing.T) {
 				_, err := os.Stdout.Write([]byte("test"))
 				assert.NoError(t, err)
 			},
-			expectedStdOut: "testPASS\n",
+			expectedStdOut: "test",
 			expectedStdErr: "",
 			shouldErr:      false,
 		},
@@ -48,7 +49,7 @@ func TestExecFaker(t *testing.T) {
 				_, err := os.Stderr.Write([]byte("test"))
 				assert.NoError(t, err)
 			},
-			expectedStdOut: "PASS\n",
+			expectedStdOut: "",
 			expectedStdErr: "test",
 			shouldErr:      false,
 		},
@@ -67,7 +68,7 @@ func TestExecFaker(t *testing.T) {
 				actualStdIn, err := ioutil.ReadAll(os.Stdin)
 				assert.Equal(t, "test", string(actualStdIn))
 			},
-			expectedStdOut: "PASS\n",
+			expectedStdOut: "",
 			expectedStdErr: "test",
 			shouldErr:      false,
 		},
@@ -109,7 +110,7 @@ func TestExecFaker(t *testing.T) {
 			cmd.Stdin = bytes.NewReader(c.givenStdIn)
 			err := cmd.Run()
 
-			assert.Equal(t, c.expectedStdOut, stdout.String())
+			assert.Equal(t, c.expectedStdOut, truncateStdout(stdout.String()))
 			assert.Equal(t, c.expectedStdErr, stderr.String())
 
 			if c.shouldErr {
@@ -147,4 +148,13 @@ func TestExecutionCount(t *testing.T) {
 			assert.Equal(t, i, executionCount)
 		})
 	}
+}
+
+// remove test result info from stdout
+func truncateStdout(stdout string) string {
+	idx := strings.Index(stdout, "PASS")
+	if idx == -1 {
+		return stdout
+	}
+	return stdout[:idx]
 }

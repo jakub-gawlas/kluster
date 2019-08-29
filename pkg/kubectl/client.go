@@ -14,6 +14,8 @@ const (
 	kubectlCmd = "kubectl"
 )
 
+var execCommand = exec.Command
+
 func New(kubeconfigPath string) *Client {
 	return &Client{
 		kubeconfig: kubeconfigPath,
@@ -22,7 +24,7 @@ func New(kubeconfigPath string) *Client {
 
 func (cli *Client) Exec(arg ...string) error {
 	var stderr bytes.Buffer
-	cmd := exec.Command(kubectlCmd, arg...)
+	cmd := execCommand(kubectlCmd, arg...)
 	cmd.Env = []string{"KUBECONFIG=" + cli.kubeconfig}
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
@@ -33,7 +35,7 @@ func (cli *Client) Exec(arg ...string) error {
 
 func (cli *Client) ExecStdinData(data []byte, arg ...string) error {
 	var stderr bytes.Buffer
-	cmd := exec.Command(kubectlCmd, arg...)
+	cmd := execCommand(kubectlCmd, arg...)
 	cmd.Env = []string{"KUBECONFIG=" + cli.kubeconfig}
 	cmd.Stderr = &stderr
 	cmd.Stdin = bytes.NewReader(data)
