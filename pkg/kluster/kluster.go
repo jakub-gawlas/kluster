@@ -11,9 +11,10 @@ import (
 )
 
 type Kluster struct {
-	cluster *cluster.Cluster
-	cfg     *Config
-	cfgPath string
+	cluster        *cluster.Cluster
+	cfg            *Config
+	cfgPath        string
+	kubeconfigPath string
 }
 
 func New(cfgPath string) (*Kluster, error) {
@@ -21,10 +22,16 @@ func New(cfgPath string) (*Kluster, error) {
 	if err != nil {
 		return nil, err
 	}
+	c := cluster.New(cfg.Name)
+	kubeconfig, err := c.KubeConfigPath()
+	if err != nil {
+		return nil, err
+	}
 	return &Kluster{
-		cluster: cluster.New(cfg.Name),
-		cfg:     cfg,
-		cfgPath: cfgPath,
+		cluster:        cluster.New(cfg.Name),
+		cfg:            cfg,
+		cfgPath:        cfgPath,
+		kubeconfigPath: kubeconfig,
 	}, nil
 }
 
@@ -46,11 +53,8 @@ func (k Kluster) Deploy() error {
 		if err := k.cluster.Create(k.cfgPath); err != nil {
 			return err
 		}
-		kubeconfig, err := k.cluster.KubeConfigPath()
-		if err != nil {
-			return err
-		}
-		h := helm.New(kubeconfig)
+		kube := kubectl.New(k.kubeconfigPath)
+		h := helm.New(kube, k.kubeconfigPath)
 		if err := h.Init(); err != nil {
 			return err
 		}

@@ -3,6 +3,8 @@ package kluster
 import (
 	"fmt"
 
+	"github.com/jakub-gawlas/kluster/pkg/kubectl"
+
 	"github.com/jakub-gawlas/kluster/pkg/cluster"
 	"github.com/jakub-gawlas/kluster/pkg/docker"
 	"github.com/jakub-gawlas/kluster/pkg/helm"
@@ -27,7 +29,8 @@ func (chart Chart) Deploy(cluster *cluster.Cluster, installed bool) error {
 		return errors.Wrap(err, "prepare apps")
 	}
 
-	h := helm.New(kubeconfig)
+	kube := kubectl.New(kubeconfig)
+	h := helm.New(kube, kubeconfig)
 	if installed {
 		fmt.Printf("\nUpgrading helm chart: %s ⬆", chart.Name)
 		if err := h.Upgrade(chart.Name, chart.Path, sets); err != nil {

@@ -5,16 +5,20 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
-
-	"github.com/jakub-gawlas/kluster/pkg/kubectl"
 )
 
 type Client struct {
+	kubectl    KubectlExecuter
 	kubeconfig string
+}
+
+type KubectlExecuter interface {
+	Exec(...string) error
 }
 
 const (
@@ -23,13 +27,14 @@ const (
 	installRetryInterval = time.Second * 15
 )
 
-var execCommand = exec.Command
-
-func New(kubeconfigPath string) *Client {
+func New(kubectl KubectlExecuter, kubeconfigPath string) *Client {
 	return &Client{
+		kubectl:    kubectl,
 		kubeconfig: kubeconfigPath,
 	}
 }
+
+var execCommand = exec.Command
 
 func (cli *Client) Init() error {
 	var stderr bytes.Buffer
@@ -41,8 +46,7 @@ func (cli *Client) Init() error {
 		return errors.Wrap(fmt.Errorf(stderr.String()), "helm init")
 	}
 
-	k := kubectl.New(cli.kubeconfig)
-	if err := k.Exec("create", "clusterrolebinding", "add-on-cluster-admin", "--clusterrole=cluster-admin", "--serviceaccount=kube-system:default"); err != nil {
+	if err := cli.kubectl.Exec("create", "clusterrolebinding", "add-on-cluster-admin", "--clusterrole=cluster-admin", "--serviceaccount=kube-system:default"); err != nil {
 		return errors.Wrap(err, "create helm role")
 	}
 
@@ -67,24 +71,37 @@ func (cli *Client) Upgrade(name, path string, sets map[string]string) error {
 	return nil
 }
 
-func (cli *Client) Install(name, path string, sets map[string]string) error {
+func (cli *Client) Install(name, path string, sets map[string]string, retryOpts ...RetryOption) error {
+	retry := &RetryOptions{
+		MaxRetries: installMaxRetries,
+		Interval:   installRetryInterval,
+	}
+	for _, opt := range retryOpts {
+		opt(retry)
+	}
+
 	i := 0
 	for {
 		err := cli.install(name, path, sets)
 		if err == nil {
 			return nil
 		}
-		if i > installMaxRetries {
+		if i >= retry.MaxRetries {
 			return err
 		}
 		i++
-		time.Sleep(installRetryInterval)
+		time.Sleep(retry.Interval)
 	}
 }
 
 func (cli *Client) install(name, path string, sets map[string]string) error {
+	args := []string{"install", "--name", name, path}
+	if len(sets) > 0 {
+		args = append(args, "--set", createSet(sets))
+	}
+
 	var stderr bytes.Buffer
-	cmd := exec.Command(helmCmd, "install", "--name", name, "--set", createSet(sets), path)
+	cmd := execCommand(helmCmd, args...)
 	cmd.Env = []string{"KUBECONFIG=" + cli.kubeconfig}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = &stderr
@@ -101,5 +118,28 @@ func createSet(sets map[string]string) string {
 		v := k + "=" + v
 		vv = append(vv, v)
 	}
+	sort.Slice(vv, func(i, j int) bool {
+		return vv[i] < vv[j]
+	})
+
 	return strings.Join(vv, ",")
+}
+
+type RetryOptions struct {
+	MaxRetries int
+	Interval   time.Duration
+}
+
+type RetryOption func(*RetryOptions)
+
+func WithMaxRetries(maxRetries int) RetryOption {
+	return func(opts *RetryOptions) {
+		opts.MaxRetries = maxRetries
+	}
+}
+
+func WithInterval(interval time.Duration) RetryOption {
+	return func(opts *RetryOptions) {
+		opts.Interval = interval
+	}
 }
