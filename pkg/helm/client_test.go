@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/jakub-gawlas/kluster/pkg/tests"
 	"github.com/stretchr/testify/assert"
 )
@@ -197,4 +199,99 @@ func TestClient_Install(t *testing.T) {
 			assert.Equal(t, c.expectedErr, err)
 		})
 	}
+}
+
+func TestClient_Init(t *testing.T) {
+	cases := []struct {
+		name      string
+		givenName string
+		givenPath string
+		givenSets map[string]string
+		prepare   func(*mocked)
+		testExec  func(t *testing.T, args []string)
+		shouldErr bool
+	}{
+		{
+			name:      "all pass",
+			givenName: "test",
+			givenPath: "helm/test",
+			givenSets: nil,
+			prepare: func(m *mocked) {
+				m.On("Exec", []string{"create", "clusterrolebinding", "add-on-cluster-admin", "--clusterrole=cluster-admin", "--serviceaccount=kube-system:default"}).Return(nil)
+			},
+			testExec: func(t *testing.T, args []string) {
+				expectedArgs := []string{"helm", "init"}
+				assert.Equal(t, expectedArgs, args)
+			},
+			shouldErr: false,
+		},
+		{
+			name:      "kubectl exec error",
+			givenName: "test",
+			givenPath: "helm/test",
+			givenSets: nil,
+			prepare: func(m *mocked) {
+				m.On("Exec", []string{"create", "clusterrolebinding", "add-on-cluster-admin", "--clusterrole=cluster-admin", "--serviceaccount=kube-system:default"}).Return(fmt.Errorf("test-err"))
+			},
+			testExec: func(t *testing.T, args []string) {
+				expectedArgs := []string{"helm", "init"}
+				assert.Equal(t, expectedArgs, args)
+			},
+			shouldErr: true,
+		},
+		{
+			name:      "exec error",
+			givenName: "test",
+			givenPath: "helm/test",
+			givenSets: nil,
+			prepare:   func(m *mocked) {},
+
+			// FIX: should fail, but os.Exit break
+			testExec: func(t *testing.T, args []string) {
+				expectedArgs := []string{"helm", "init", "should-fail"}
+				assert.Equal(t, expectedArgs, args)
+				os.Exit(1)
+			},
+			shouldErr: true,
+		},
+	}
+	const kubeconfigPath = "test-path"
+	fake := tests.NewExecFaker()
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			execInfo := fake.ExecInfo()
+			if execInfo.IsFakeExecution {
+				if execInfo.CaseName == c.name {
+					assert.Equal(t, kubeconfigPath, os.Getenv("KUBECONFIG"))
+					c.testExec(t, execInfo.Args)
+				}
+				return
+			}
+
+			execCommand = fake.FakeExec(c.name)
+			defer func() { execCommand = exec.Command }()
+
+			m := &mocked{}
+			c.prepare(m)
+			cli := New(m, kubeconfigPath)
+			err := cli.Init()
+
+			if c.shouldErr {
+				assert.NotNil(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			m.AssertExpectations(t)
+		})
+	}
+}
+
+type mocked struct {
+	mock.Mock
+}
+
+func (m *mocked) Exec(arg ...string) error {
+	args := m.Called(arg)
+	return args.Error(0)
 }
