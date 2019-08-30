@@ -1,6 +1,7 @@
 package kubectl
 
 import (
+	"github.com/jakub-gawlas/kluster/pkg/cluster/kind"
 	"github.com/jakub-gawlas/kluster/pkg/kluster"
 	"github.com/jakub-gawlas/kluster/pkg/kubectl"
 	"github.com/spf13/cobra"
@@ -26,14 +27,26 @@ func NewCommand() *cobra.Command {
 }
 
 func runE(flags *flagpole, args []string) error {
-	k, err := kluster.New(flags.ConfigPath)
+	cfg, err := kluster.LoadConfig(flags.ConfigPath)
 	if err != nil {
 		return err
 	}
+
+	cluster := kind.New(cfg.Name, flags.ConfigPath)
+	k, err := kluster.New(cluster, cfg)
+	if err != nil {
+		return err
+	}
+
 	kubeconfig, err := k.Cluster().KubeConfigPath()
 	if err != nil {
 		return err
 	}
+
 	kube := kubectl.New(kubeconfig)
-	return kube.Exec(args...)
+	if err := kube.Exec(args...); err != nil {
+		return err
+	}
+
+	return nil
 }

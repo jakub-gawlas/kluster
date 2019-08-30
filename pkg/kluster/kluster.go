@@ -3,31 +3,26 @@ package kluster
 import (
 	"fmt"
 
+	"github.com/jakub-gawlas/kluster/pkg/cluster"
+
 	"github.com/jakub-gawlas/kluster/pkg/yaml/resolver"
 	"github.com/pkg/errors"
 
 	"github.com/jakub-gawlas/kluster/pkg/kubectl"
 
-	"github.com/jakub-gawlas/kluster/pkg/cluster"
 	"github.com/jakub-gawlas/kluster/pkg/helm"
 )
 
 type Kluster struct {
-	cluster        *cluster.Cluster
+	cluster        cluster.Cluster
 	cfg            *Config
-	cfgPath        string
 	kubeconfigPath string
 }
 
-func New(cfgPath string) (*Kluster, error) {
-	cfg, err := LoadConfig(cfgPath)
-	if err != nil {
-		return nil, err
-	}
+func New(cluster cluster.Cluster, cfg *Config) (*Kluster, error) {
 	return &Kluster{
-		cluster: cluster.New(cfg.Name),
+		cluster: cluster,
 		cfg:     cfg,
-		cfgPath: cfgPath,
 	}, nil
 }
 
@@ -43,11 +38,7 @@ func (k Kluster) KubeconfigPath() string {
 	return path
 }
 
-func (k Kluster) Name() string {
-	return k.cfg.Name
-}
-
-func (k Kluster) Cluster() *cluster.Cluster {
+func (k Kluster) Cluster() cluster.Cluster {
 	return k.cluster
 }
 
@@ -58,7 +49,7 @@ func (k Kluster) Deploy() error {
 	}
 
 	if !exists {
-		if err := k.cluster.Create(k.cfgPath); err != nil {
+		if err := k.cluster.Create(); err != nil {
 			return err
 		}
 		kube := kubectl.New(k.KubeconfigPath())

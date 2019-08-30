@@ -1,6 +1,7 @@
 package destroy
 
 import (
+	"github.com/jakub-gawlas/kluster/pkg/cluster/kind"
 	"github.com/jakub-gawlas/kluster/pkg/kluster"
 	"github.com/spf13/cobra"
 )
@@ -24,7 +25,13 @@ func NewCommand() *cobra.Command {
 }
 
 func runE(flags *flagpole) error {
-	k, err := kluster.New(flags.ConfigPath)
+	cfg, err := kluster.LoadConfig(flags.ConfigPath)
+	if err != nil {
+		return err
+	}
+
+	cluster := kind.New(cfg.Name, flags.ConfigPath)
+	k, err := kluster.New(cluster, cfg)
 	if err != nil {
 		return err
 	}

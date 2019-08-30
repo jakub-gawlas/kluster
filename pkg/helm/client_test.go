@@ -67,8 +67,6 @@ func TestClient_Upgrade(t *testing.T) {
 			givenPath: "helm/test",
 			givenSets: nil,
 			testExec: func(t *testing.T, args []string) {
-				expectedArgs := []string{"helm", "upgrade", "test", "helm/test"}
-				assert.Equal(t, expectedArgs, args)
 				_, err := os.Stderr.Write([]byte("some-error"))
 				assert.NoError(t, err)
 				os.Exit(1)

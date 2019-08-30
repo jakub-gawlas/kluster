@@ -13,6 +13,8 @@ type App struct {
 	BeforeBuild []string `yaml:"before_build"`
 }
 
+var execCommand = exec.Command
+
 func (app App) Prepare() error {
 	if len(app.BeforeBuild) == 0 {
 		return nil
@@ -32,9 +34,10 @@ func (app App) Prepare() error {
 
 func run(script string) ([]byte, error) {
 	cmds := strings.Split(script, " ")
-	if len(cmds) == 0 {
+	if len(cmds) == 0 || cmds[0] == "" {
 		return nil, fmt.Errorf("invalid format")
 	}
+
 	var args []string
 	if len(cmds) > 1 {
 		args = cmds[1:]
@@ -44,7 +47,7 @@ func run(script string) ([]byte, error) {
 		stdout bytes.Buffer
 		stderr bytes.Buffer
 	)
-	cmd := exec.Command(cmds[0], args...)
+	cmd := execCommand(cmds[0], args...)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {

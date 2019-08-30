@@ -3,9 +3,10 @@ package kluster
 import (
 	"fmt"
 
+	"github.com/jakub-gawlas/kluster/pkg/cluster"
+
 	"github.com/jakub-gawlas/kluster/pkg/kubectl"
 
-	"github.com/jakub-gawlas/kluster/pkg/cluster"
 	"github.com/jakub-gawlas/kluster/pkg/docker"
 	"github.com/jakub-gawlas/kluster/pkg/helm"
 	"github.com/pkg/errors"
@@ -18,7 +19,7 @@ type Chart struct {
 	Apps []App  `yaml:"apps"`
 }
 
-func (chart Chart) Deploy(cluster *cluster.Cluster, installed bool) error {
+func (chart Chart) Deploy(cluster cluster.Cluster, installed bool) error {
 	kubeconfig, err := cluster.KubeConfigPath()
 	if err != nil {
 		return err
@@ -48,7 +49,7 @@ func (chart Chart) Deploy(cluster *cluster.Cluster, installed bool) error {
 	return nil
 }
 
-func (chart Chart) prepareApps(cluster *cluster.Cluster) (sets map[string]string, err error) {
+func (chart Chart) prepareApps(cluster cluster.Cluster) (sets map[string]string, err error) {
 	cli := docker.New()
 	defer func() {
 		if err := cli.Cleanup(); err != nil {

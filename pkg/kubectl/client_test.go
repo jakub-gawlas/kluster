@@ -49,8 +49,6 @@ func TestClient_Exec(t *testing.T) {
 			name:      "exec error",
 			givenArgs: []string{"test"},
 			testExec: func(t *testing.T, args []string) {
-				expectedArgs := []string{"kubectl", "test"}
-				assert.Equal(t, expectedArgs, args)
 				_, err := os.Stderr.Write([]byte("test-err"))
 				assert.NoError(t, err)
 				os.Exit(1)
@@ -144,15 +142,7 @@ func TestClient_ExecStdinData(t *testing.T) {
 			givenArgs: []string{"test"},
 			givenData: []byte("test"),
 			testExec: func(t *testing.T, args []string) {
-				expectedArgs := []string{"kubectl", "test"}
-				assert.Equal(t, expectedArgs, args)
-
-				expectedStdin := []byte("test")
-				actualStdin, err := ioutil.ReadAll(os.Stdin)
-				assert.NoError(t, err)
-				assert.Equal(t, expectedStdin, actualStdin)
-
-				_, err = os.Stderr.Write([]byte("test-err"))
+				_, err := os.Stderr.Write([]byte("test-err"))
 				assert.NoError(t, err)
 				os.Exit(1)
 			},
