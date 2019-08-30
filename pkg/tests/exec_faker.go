@@ -72,6 +72,19 @@ func (e *ExecFaker) ExecInfo() ExecutionInfo {
 	}
 }
 
+func FakeStdout(data []byte) []byte {
+	str := string(data)
+	idx := strings.Index(str, "PASS")
+	if idx == -1 {
+		return data
+	}
+	r := []byte(str[:idx])
+	if len(r) == 0 {
+		return nil
+	}
+	return r
+}
+
 func callerFunctionName() string {
 	pc := make([]uintptr, 15)
 	n := runtime.Callers(3, pc)

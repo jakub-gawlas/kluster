@@ -1,40 +1,91 @@
 package resolver
 
 import (
-	"io/ioutil"
 	"os"
-	"path"
 	"testing"
 
-	"gopkg.in/yaml.v2"
+	"github.com/jakub-gawlas/kluster/pkg/yaml"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestResolver_ResolveRefs(t *testing.T) {
-	// Reference to exists file
-	input, err := ioutil.ReadFile("test/input.yaml")
-	assert.NoError(t, err)
+	cases := []struct {
+		name      string
+		given     []byte
+		expected  []byte
+		shouldErr bool
+	}{
+		{
+			name:      "nil",
+			given:     nil,
+			expected:  []byte{},
+			shouldErr: false,
+		},
+		{
+			name:      "empty",
+			given:     []byte{},
+			expected:  []byte{},
+			shouldErr: false,
+		},
+		{
+			name: "single doc single ref",
+			given: []byte(`foo: { $secret: ref/secret }
+`),
+			expected: []byte(`foo: U09NRV9DT05URU5U
+`),
+			shouldErr: false,
+		},
+		{
+			name: "single doc many refs",
+			given: []byte(`foo: { $secret: ref/secret }
+bar: { $secret: ref/top_secret }
+`),
+			expected: []byte(`foo: U09NRV9DT05URU5U
+bar: VE9QX1NFQ1JFVA==
+`),
+			shouldErr: false,
+		},
+		{
+			name: "many docs many refs",
+			given: []byte(`foo: { $secret: ref/secret }
+bar: { $secret: ref/top_secret }
+---
+baz: { $secret: ref/secret }
+`),
+			expected: []byte(`foo: U09NRV9DT05URU5U
+bar: VE9QX1NFQ1JFVA==
+---
+baz: U09NRV9DT05URU5U
+`),
+			shouldErr: false,
+		},
+		{
+			name: "invalid ref",
+			given: []byte(`foo: { $secret: ref/secret_non_exists }
+`),
+			expected:  nil,
+			shouldErr: true,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			r := New("./test")
+			actual, actualErr := r.ResolveRefs(c.given)
 
-	expectedOutputRaw, err := ioutil.ReadFile("test/output.yaml")
-	assert.NoError(t, err)
+			expectedYaml, err := yaml.Parse(c.expected)
+			assert.NoError(t, err)
+			actualYaml, err := yaml.Parse(actual)
+			assert.NoError(t, err)
 
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
-
-	baseDir := path.Dir(path.Join(wd, "test/input.yaml"))
-	r := New(baseDir)
-
-	actualOutputRaw, err := r.ResolveRefs(input)
-	assert.NoError(t, err)
-
-	var expectedOutput, actualOutput interface{}
-	err = yaml.Unmarshal(expectedOutputRaw, &expectedOutput)
-	assert.NoError(t, err)
-	err = yaml.Unmarshal(actualOutputRaw, &actualOutput)
-	assert.NoError(t, err)
-
-	assert.Equal(t, expectedOutput, actualOutput)
+			assert.Equal(t, expectedYaml, actualYaml)
+			if c.shouldErr {
+				assert.Error(t, actualErr)
+			} else {
+				assert.NoError(t, actualErr)
+			}
+		})
+	}
 }
 
 func TestResolver_ResolveValue(t *testing.T) {
@@ -66,7 +117,7 @@ func TestResolver_ResolveValue(t *testing.T) {
 				"$secret": "test/non-exists-file",
 			},
 			expectedValue: nil,
-			expectedOk:    false,
+			expectedOk:    true,
 			shouldErr:     true,
 		},
 		{
@@ -76,7 +127,7 @@ func TestResolver_ResolveValue(t *testing.T) {
 				"$secret": "test/ref/secret",
 			},
 			expectedValue: nil,
-			expectedOk:    false,
+			expectedOk:    true,
 			shouldErr:     true,
 		},
 		{

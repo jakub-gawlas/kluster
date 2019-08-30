@@ -6,8 +6,9 @@ import (
 	"io/ioutil"
 	"path"
 
+	"github.com/jakub-gawlas/kluster/pkg/yaml"
+
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
 )
 
 type Resolver struct {
@@ -25,14 +26,16 @@ func New(basePath string) *Resolver {
 }
 
 func (r *Resolver) ResolveRefs(data []byte) ([]byte, error) {
-	var file interface{}
-	if err := yaml.Unmarshal(data, &file); err != nil {
+	file, err := yaml.Parse(data)
+	if err != nil {
 		return nil, errors.Wrap(err, "unmarshal yaml")
 	}
-	if err := r.resolveRefs(file); err != nil {
-		return nil, errors.Wrap(err, "resolve reference")
+	for _, doc := range file.Documents {
+		if err := r.resolveRefs(doc); err != nil {
+			return nil, errors.Wrap(err, "resolve reference")
+		}
 	}
-	return yaml.Marshal(file)
+	return file.Marshal()
 }
 
 func (r *Resolver) ResolveValue(value interface{}) (interface{}, bool, error) {
@@ -45,11 +48,11 @@ func (r *Resolver) ResolveValue(value interface{}) (interface{}, bool, error) {
 	case ReferenceSecret:
 		filePath, ok := ref.Value.(string)
 		if !ok {
-			return nil, false, fmt.Errorf("expected string value")
+			return nil, true, fmt.Errorf("expected string value")
 		}
 		data, err := r.readFile(filePath)
 		if err != nil {
-			return nil, false, err
+			return nil, true, err
 		}
 		v := base64.StdEncoding.EncodeToString(data)
 		return v, true, nil

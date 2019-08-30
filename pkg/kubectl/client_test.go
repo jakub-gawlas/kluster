@@ -87,6 +87,7 @@ func TestClient_ExecStdinData(t *testing.T) {
 		givenArgs   []string
 		givenData   []byte
 		testExec    func(t *testing.T, args []string)
+		expectedRes []byte
 		expectedErr error
 	}{
 		{
@@ -117,6 +118,25 @@ func TestClient_ExecStdinData(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, expectedStdin, actualStdin)
 			},
+			expectedErr: nil,
+		},
+		{
+			name:      "many args with data and stdout response",
+			givenArgs: []string{"test"},
+			givenData: []byte("test-data"),
+			testExec: func(t *testing.T, args []string) {
+				expectedArgs := []string{"kubectl", "test"}
+				assert.Equal(t, expectedArgs, args)
+
+				expectedStdin := []byte("test-data")
+				actualStdin, err := ioutil.ReadAll(os.Stdin)
+				assert.NoError(t, err)
+				assert.Equal(t, expectedStdin, actualStdin)
+
+				_, err = os.Stdout.Write([]byte("test-data"))
+				assert.NoError(t, err)
+			},
+			expectedRes: []byte("test-data"),
 			expectedErr: nil,
 		},
 		{
@@ -156,7 +176,8 @@ func TestClient_ExecStdinData(t *testing.T) {
 			defer func() { execCommand = exec.Command }()
 
 			cli := New(kubeconfigPath)
-			err := cli.ExecStdinData(c.givenData, c.givenArgs...)
+			actualRes, err := cli.ExecStdinData(c.givenData, c.givenArgs...)
+			assert.Equal(t, c.expectedRes, tests.FakeStdout(actualRes))
 			assert.Equal(t, c.expectedErr, err)
 		})
 	}

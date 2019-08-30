@@ -2,3 +2,5 @@ foo: bar
 nested:
   ref: { $secret: ref/secret }
   foo: 123
+---
+baz: { $secret: ref/top_secret }

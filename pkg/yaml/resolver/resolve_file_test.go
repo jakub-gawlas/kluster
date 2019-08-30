@@ -1,31 +1,54 @@
 package resolver
 
 import (
-	"io/ioutil"
 	"testing"
 
+	"github.com/jakub-gawlas/kluster/pkg/yaml"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v2"
 )
 
 func TestResolveFile(t *testing.T) {
-	// Exists file
-	expectedOutputRaw, err := ioutil.ReadFile("test/output.yaml")
-	assert.NoError(t, err)
+	cases := []struct {
+		name      string
+		given     string
+		expected  []byte
+		shouldErr bool
+	}{
+		{
+			name:  "exists file",
+			given: "test/input.yaml",
+			expected: []byte(`
+foo: bar
+nested:
+  ref: U09NRV9DT05URU5U
+  foo: 123
+---
+baz: VE9QX1NFQ1JFVA==
+`),
+			shouldErr: false,
+		},
+		{
+			name:      "non exists file",
+			given:     "test/input_non_exists.yaml",
+			expected:  nil,
+			shouldErr: true,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			actual, actualErr := ResolveFile(c.given)
 
-	actualOutputRaw, err := ResolveFile("test/input.yaml")
-	assert.NoError(t, err)
+			expectedYaml, err := yaml.Parse(c.expected)
+			assert.NoError(t, err)
+			actualYaml, err := yaml.Parse(actual)
+			assert.NoError(t, err)
 
-	var expectedOutput, actualOutput interface{}
-	err = yaml.Unmarshal(expectedOutputRaw, &expectedOutput)
-	assert.NoError(t, err)
-	err = yaml.Unmarshal(actualOutputRaw, &actualOutput)
-	assert.NoError(t, err)
-
-	assert.Equal(t, expectedOutput, actualOutput)
-
-	// Non exists file
-	actualOutputRaw, err = ResolveFile("test/non_exists.yaml")
-	assert.Nil(t, actualOutputRaw)
-	assert.Error(t, err)
+			assert.Equal(t, expectedYaml, actualYaml)
+			if c.shouldErr {
+				assert.Error(t, actualErr)
+			} else {
+				assert.NoError(t, actualErr)
+			}
+		})
+	}
 }

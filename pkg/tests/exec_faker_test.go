@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -110,7 +109,7 @@ func TestExecFaker(t *testing.T) {
 			cmd.Stdin = bytes.NewReader(c.givenStdIn)
 			err := cmd.Run()
 
-			assert.Equal(t, c.expectedStdOut, truncateStdout(stdout.String()))
+			assert.Equal(t, c.expectedStdOut, string(FakeStdout(stdout.Bytes())))
 			assert.Equal(t, c.expectedStdErr, stderr.String())
 
 			if c.shouldErr {
@@ -150,11 +149,42 @@ func TestExecutionCount(t *testing.T) {
 	}
 }
 
-// remove test result info from stdout
-func truncateStdout(stdout string) string {
-	idx := strings.Index(stdout, "PASS")
-	if idx == -1 {
-		return stdout
+func TestFakeStdout(t *testing.T) {
+	cases := []struct {
+		name     string
+		given    []byte
+		expected []byte
+	}{
+		{
+			name:     "nil data",
+			given:    nil,
+			expected: nil,
+		},
+		{
+			name:     "empty data",
+			given:    []byte{},
+			expected: []byte{},
+		},
+		{
+			name:     "no from fake exec",
+			given:    []byte("test data"),
+			expected: []byte("test data"),
+		},
+		{
+			name:     "data from fake exec",
+			given:    []byte("test dataPASS\n"),
+			expected: []byte("test data"),
+		},
+		{
+			name:     "empty from fake exec",
+			given:    []byte("PASS\n"),
+			expected: nil,
+		},
 	}
-	return stdout[:idx]
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			actual := FakeStdout(c.given)
+			assert.Equal(t, c.expected, actual)
+		})
+	}
 }
