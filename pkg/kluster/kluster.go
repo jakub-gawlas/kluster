@@ -1,11 +1,8 @@
 package kluster
 
 import (
-	"fmt"
-
 	"github.com/jakub-gawlas/kluster/pkg/cluster"
 
-	"github.com/jakub-gawlas/kluster/pkg/yaml/resolver"
 	"github.com/pkg/errors"
 
 	"github.com/jakub-gawlas/kluster/pkg/kubectl"
@@ -59,13 +56,16 @@ func (k Kluster) Deploy() error {
 		}
 	}
 
-	if err := k.deployResources(); err != nil {
-		return errors.Wrap(err, "deploy resources")
+	for _, resource := range k.cfg.Resources {
+		kube := kubectl.New(k.KubeconfigPath())
+		if err := resource.Deploy(kube); err != nil {
+			return errors.Wrapf(err, "deploy resource: %s", resource.Name)
+		}
 	}
 
 	for _, chart := range k.cfg.Charts {
 		if err := chart.Deploy(k.cluster, exists); err != nil {
-			return err
+			return errors.Wrapf(err, "deploy chart: %s", chart.Name)
 		}
 	}
 
@@ -74,23 +74,4 @@ func (k Kluster) Deploy() error {
 
 func (k Kluster) Destroy() error {
 	return k.cluster.Destroy()
-}
-
-func (k Kluster) deployResources() error {
-	for _, path := range k.cfg.Resources {
-		resolved, err := resolver.ResolveFile(path)
-		if err != nil {
-			return errors.Wrapf(err, "resolve references in resource: %s", path)
-		}
-
-		kube := kubectl.New(k.KubeconfigPath())
-		result, err := kube.ExecStdinData(resolved, "apply", "-f", "-")
-		if err != nil {
-			return errors.Wrapf(err, "execute kubectl for resource: %s", path)
-		}
-		fmt.Printf("Deployed resource: %s\n", path)
-		fmt.Println(string(result))
-	}
-
-	return nil
 }

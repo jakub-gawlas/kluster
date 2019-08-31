@@ -7,7 +7,9 @@ nodes:
       - containerPort: 30001
         hostPort: 3001
 resources:
-  - cluster/resources/secret.yaml
+  - name: secrets
+    paths:
+      - cluster/resources/secret.yaml
 charts:
   - name: app
     path: cluster/helm/app
