@@ -215,7 +215,7 @@ func TestClient_Init(t *testing.T) {
 			givenPath: "helm/test",
 			givenSets: nil,
 			prepare: func(m *mocked) {
-				m.On("Exec", []string{"create", "clusterrolebinding", "add-on-cluster-admin", "--clusterrole=cluster-admin", "--serviceaccount=kube-system:default"}).Return(nil)
+				m.On("Exec", []string{"create", "clusterrolebinding", "add-on-cluster-admin", "--clusterrole=cluster-admin", "--serviceaccount=kube-system:default"}).Return(nil, nil)
 			},
 			testExec: func(t *testing.T, args []string) {
 				expectedArgs := []string{"helm", "init"}
@@ -229,7 +229,7 @@ func TestClient_Init(t *testing.T) {
 			givenPath: "helm/test",
 			givenSets: nil,
 			prepare: func(m *mocked) {
-				m.On("Exec", []string{"create", "clusterrolebinding", "add-on-cluster-admin", "--clusterrole=cluster-admin", "--serviceaccount=kube-system:default"}).Return(fmt.Errorf("test-err"))
+				m.On("Exec", []string{"create", "clusterrolebinding", "add-on-cluster-admin", "--clusterrole=cluster-admin", "--serviceaccount=kube-system:default"}).Return(nil, fmt.Errorf("test-err"))
 			},
 			testExec: func(t *testing.T, args []string) {
 				expectedArgs := []string{"helm", "init"}
@@ -285,7 +285,11 @@ type mocked struct {
 	mock.Mock
 }
 
-func (m *mocked) Exec(arg ...string) error {
+func (m *mocked) Exec(arg ...string) ([]byte, error) {
 	args := m.Called(arg)
-	return args.Error(0)
+	res := args.Get(0)
+	if res == nil {
+		return nil, args.Error(1)
+	}
+	return res.([]byte), args.Error(1)
 }

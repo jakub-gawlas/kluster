@@ -17,7 +17,7 @@ type Client struct {
 }
 
 type KubectlExecuter interface {
-	Exec(...string) error
+	Exec(...string) ([]byte, error)
 }
 
 const (
@@ -44,7 +44,7 @@ func (cli *Client) Init() error {
 		return errors.Wrap(fmt.Errorf(stderr.String()), "helm init")
 	}
 
-	if err := cli.kubectl.Exec("create", "clusterrolebinding", "add-on-cluster-admin", "--clusterrole=cluster-admin", "--serviceaccount=kube-system:default"); err != nil {
+	if _, err := cli.kubectl.Exec("create", "clusterrolebinding", "add-on-cluster-admin", "--clusterrole=cluster-admin", "--serviceaccount=kube-system:default"); err != nil {
 		return errors.Wrap(err, "create helm role")
 	}
 

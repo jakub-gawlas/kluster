@@ -16,6 +16,7 @@ func TestClient_Exec(t *testing.T) {
 		name        string
 		givenArgs   []string
 		testExec    func(t *testing.T, args []string)
+		expectedRes []byte
 		expectedErr error
 	}{
 		{
@@ -24,7 +25,10 @@ func TestClient_Exec(t *testing.T) {
 			testExec: func(t *testing.T, args []string) {
 				expectedArgs := []string{"kubectl"}
 				assert.Equal(t, expectedArgs, args)
+				_, err := os.Stdout.Write([]byte("test-data"))
+				assert.NoError(t, err)
 			},
+			expectedRes: []byte("test-data"),
 			expectedErr: nil,
 		},
 		{
@@ -33,7 +37,10 @@ func TestClient_Exec(t *testing.T) {
 			testExec: func(t *testing.T, args []string) {
 				expectedArgs := []string{"kubectl", "test"}
 				assert.Equal(t, expectedArgs, args)
+				_, err := os.Stdout.Write([]byte("test-data-one"))
+				assert.NoError(t, err)
 			},
+			expectedRes: []byte("test-data-one"),
 			expectedErr: nil,
 		},
 		{
@@ -42,7 +49,10 @@ func TestClient_Exec(t *testing.T) {
 			testExec: func(t *testing.T, args []string) {
 				expectedArgs := []string{"kubectl", "test", "foo", "-bar", "123"}
 				assert.Equal(t, expectedArgs, args)
+				_, err := os.Stdout.Write([]byte("test-data-many"))
+				assert.NoError(t, err)
 			},
+			expectedRes: []byte("test-data-many"),
 			expectedErr: nil,
 		},
 		{
@@ -53,6 +63,7 @@ func TestClient_Exec(t *testing.T) {
 				assert.NoError(t, err)
 				os.Exit(1)
 			},
+			expectedRes: nil,
 			expectedErr: fmt.Errorf("test-err"),
 		},
 	}
@@ -73,7 +84,8 @@ func TestClient_Exec(t *testing.T) {
 			defer func() { execCommand = exec.Command }()
 
 			cli := New(kubeconfigPath)
-			err := cli.Exec(c.givenArgs...)
+			actualRes, err := cli.Exec(c.givenArgs...)
+			assert.Equal(t, c.expectedRes, tests.FakeStdout(actualRes))
 			assert.Equal(t, c.expectedErr, err)
 		})
 	}

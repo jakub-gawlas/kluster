@@ -10,7 +10,7 @@ resources:
   - cluster/resources/secret.yaml
 charts:
   - name: app
-    path: cluster/helm/test
+    path: cluster/helm/app
     apps:
       - name: worker
         dockerfile: worker.Dockerfile

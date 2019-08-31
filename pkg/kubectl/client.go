@@ -22,17 +22,6 @@ func New(kubeconfigPath string) *Client {
 	}
 }
 
-func (cli *Client) Exec(arg ...string) error {
-	var stderr bytes.Buffer
-	cmd := execCommand(kubectlCmd, arg...)
-	cmd.Env = []string{"KUBECONFIG=" + cli.kubeconfig}
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf(stderr.String())
-	}
-	return nil
-}
-
 func (cli *Client) ExecStdinData(data []byte, arg ...string) ([]byte, error) {
 	var stdout, stderr bytes.Buffer
 	cmd := execCommand(kubectlCmd, arg...)
@@ -44,4 +33,8 @@ func (cli *Client) ExecStdinData(data []byte, arg ...string) ([]byte, error) {
 		return nil, fmt.Errorf(stderr.String())
 	}
 	return stdout.Bytes(), nil
+}
+
+func (cli *Client) Exec(arg ...string) ([]byte, error) {
+	return cli.ExecStdinData(nil, arg...)
 }

@@ -1,6 +1,8 @@
 package kubectl
 
 import (
+	"os"
+
 	"github.com/jakub-gawlas/kluster/pkg/cluster/kind"
 	"github.com/jakub-gawlas/kluster/pkg/kluster"
 	"github.com/jakub-gawlas/kluster/pkg/kubectl"
@@ -44,7 +46,12 @@ func runE(flags *flagpole, args []string) error {
 	}
 
 	kube := kubectl.New(kubeconfig)
-	if err := kube.Exec(args...); err != nil {
+	res, err := kube.Exec(args...)
+	if err != nil {
+		return err
+	}
+
+	if _, err := os.Stdout.Write(res); err != nil {
 		return err
 	}
 
