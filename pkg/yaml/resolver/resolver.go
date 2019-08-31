@@ -63,31 +63,44 @@ func (r *Resolver) ResolveValue(value interface{}) (interface{}, bool, error) {
 func (r *Resolver) resolveRefs(value interface{}) error {
 	m, ok := value.(map[interface{}]interface{})
 	if ok {
-		for k, v := range m {
-			resolved, ok, err := r.ResolveValue(v)
-			if err != nil {
-				return err
-			}
-			if ok {
-				m[k] = resolved
-			} else {
-				if err := r.resolveRefs(v); err != nil {
-					return err
-				}
-			}
+		if err := r.resolveRefsMap(m); err != nil {
+			return err
 		}
-		return nil
 	}
 
 	slice, ok := value.([]interface{})
 	if ok {
-		for _, v := range slice {
+		if err := r.resolveRefsSlice(slice); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *Resolver) resolveRefsMap(m map[interface{}]interface{}) error {
+	for k, v := range m {
+		resolved, ok, err := r.ResolveValue(v)
+		if err != nil {
+			return err
+		}
+		if ok {
+			m[k] = resolved
+		} else {
 			if err := r.resolveRefs(v); err != nil {
 				return err
 			}
 		}
 	}
+	return nil
+}
 
+func (r *Resolver) resolveRefsSlice(values []interface{}) error {
+	for _, v := range values {
+		if err := r.resolveRefs(v); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

@@ -5,9 +5,11 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jakub-gawlas/kluster/pkg/cluster"
+
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"sigs.k8s.io/kind/pkg/cluster"
+	kindCluster "sigs.k8s.io/kind/pkg/cluster"
 	"sigs.k8s.io/kind/pkg/cluster/create"
 	clusternodes "sigs.k8s.io/kind/pkg/cluster/nodes"
 	"sigs.k8s.io/kind/pkg/container/docker"
@@ -29,7 +31,7 @@ func New(name, configPath string) *Cluster {
 }
 
 func (c *Cluster) Exists() (bool, error) {
-	return cluster.IsKnown(c.name)
+	return kindCluster.IsKnown(c.name)
 }
 
 func (c *Cluster) KubeConfigPath() (string, error) {
@@ -38,10 +40,10 @@ func (c *Cluster) KubeConfigPath() (string, error) {
 		return "", err
 	}
 	if !exists {
-		return "", fmt.Errorf("cluster: %s not exists", c.name)
+		return "", cluster.ErrNotExists{Name: c.name}
 	}
 
-	ctx := cluster.NewContext(c.name)
+	ctx := kindCluster.NewContext(c.name)
 	return ctx.KubeConfigPath(), nil
 }
 
@@ -51,10 +53,10 @@ func (c *Cluster) Create() error {
 		return err
 	}
 	if exists {
-		return fmt.Errorf("cluster: %s already exists", c.name)
+		return cluster.ErrAlreadyExists{Name: c.name}
 	}
 
-	ctx := cluster.NewContext(c.name)
+	ctx := kindCluster.NewContext(c.name)
 	if err := ctx.Create(
 		create.WithConfigFile(c.cfgPath),
 	); err != nil {
@@ -75,10 +77,10 @@ func (c *Cluster) Destroy() error {
 		return err
 	}
 	if !exists {
-		return fmt.Errorf("cluster: %s not exists", c.name)
+		return cluster.ErrNotExists{Name: c.name}
 	}
 
-	ctx := cluster.NewContext(c.name)
+	ctx := kindCluster.NewContext(c.name)
 	return ctx.Delete()
 }
 
@@ -88,7 +90,7 @@ func (c *Cluster) LoadImage(imageName string) error {
 		return err
 	}
 	if !exists {
-		return fmt.Errorf("cluster: %s not exists", c.name)
+		return cluster.ErrNotExists{Name: c.name}
 	}
 
 	imageID, err := docker.ImageID(imageName)
@@ -96,7 +98,7 @@ func (c *Cluster) LoadImage(imageName string) error {
 		return fmt.Errorf("image: %qs not present locally", imageName)
 	}
 
-	ctx := cluster.NewContext(c.name)
+	ctx := kindCluster.NewContext(c.name)
 	nodes, err := ctx.ListInternalNodes()
 	if err != nil {
 		return err
