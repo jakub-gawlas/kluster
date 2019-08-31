@@ -185,6 +185,9 @@ func TestFakeStdout(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			actual := FakeStdout(c.given)
 			assert.Equal(t, c.expected, actual)
+
+			actualString := FakeStringStdout(string(c.given))
+			assert.Equal(t, string(c.expected), actualString)
 		})
 	}
 }

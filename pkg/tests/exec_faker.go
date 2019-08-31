@@ -85,6 +85,18 @@ func FakeStdout(data []byte) []byte {
 	return r
 }
 
+func FakeStringStdout(str string) string {
+	idx := strings.Index(str, "PASS")
+	if idx == -1 {
+		return str
+	}
+	r := str[:idx]
+	if len(r) == 0 {
+		return ""
+	}
+	return r
+}
+
 func callerFunctionName() string {
 	pc := make([]uintptr, 15)
 	n := runtime.Callers(3, pc)

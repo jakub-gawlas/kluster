@@ -243,11 +243,7 @@ func TestClient_Init(t *testing.T) {
 			givenPath: "helm/test",
 			givenSets: nil,
 			prepare:   func(m *mocked) {},
-
-			// FIX: should fail, but os.Exit break
 			testExec: func(t *testing.T, args []string) {
-				expectedArgs := []string{"helm", "init", "should-fail"}
-				assert.Equal(t, expectedArgs, args)
 				os.Exit(1)
 			},
 			shouldErr: true,
