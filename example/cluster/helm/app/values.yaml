@@ -1,0 +1,23 @@
+app:
+  server:
+    name: server
+    port: 3000
+    deployment:
+      replicas: 1
+    service:
+      nodePort: 30001
+    image:
+      name: server
+      tag: 0.0.1
+      pullPolicy: Always
+
+  worker:
+    name: worker
+    deployment:
+      replicas: 2
+    image:
+      name: worker
+      tag: 0.0.1
+      pullPolicy: Always
+    env:
+      interval: 1s

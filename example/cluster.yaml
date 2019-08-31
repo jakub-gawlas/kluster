@@ -1,0 +1,20 @@
+kind: Cluster
+apiVersion: kind.sigs.k8s.io/v1alpha3
+name: test
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30001
+        hostPort: 3001
+resources:
+  - cluster/resources/secret.yaml
+charts:
+  - name: app
+    path: cluster/helm/test
+    apps:
+      - name: worker
+        dockerfile: worker.Dockerfile
+        before_build:
+          - echo test
+      - name: server
+        dockerfile: server.Dockerfile
