@@ -186,7 +186,7 @@ func TestFakeStdout(t *testing.T) {
 			actual := FakeStdout(c.given)
 			assert.Equal(t, c.expected, actual)
 
-			actualString := FakeStringStdout(string(c.given))
+			actualString := FakeStdoutString(string(c.given))
 			assert.Equal(t, string(c.expected), actualString)
 		})
 	}

@@ -14,11 +14,11 @@ type Resource struct {
 	Paths []string `yaml:"paths"`
 }
 
-type KubectlStdinExecutor interface {
-	ExecStdinData([]byte, ...string) ([]byte, error)
+type KubectlExecutor interface {
+	ExecInData([]byte, ...string) ([]byte, error)
 }
 
-func (r Resource) Deploy(kube KubectlStdinExecutor) error {
+func (r Resource) Deploy(kube KubectlExecutor) error {
 	paths := make([]string, 0)
 	for _, path := range r.Paths {
 		filePaths, err := resolveFilesFromPath(path)
@@ -36,7 +36,7 @@ func (r Resource) Deploy(kube KubectlStdinExecutor) error {
 			return errors.Wrapf(err, "resolve references in resource: %s", path)
 		}
 
-		result, err := kube.ExecStdinData(resolved, "apply", "-f", "-")
+		result, err := kube.ExecInData(resolved, "apply", "-f", "-")
 		if err != nil {
 			return errors.Wrapf(err, "kubectl apply on file: %s", path)
 		}

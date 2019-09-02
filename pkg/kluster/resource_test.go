@@ -25,9 +25,9 @@ func TestResource_Deploy(t *testing.T) {
 				},
 			},
 			prepareMock: func(m *mocked) {
-				m.On("ExecStdinData", []byte("kind: Test1\n"), cmd).Return([]byte("test-1"), nil).Once()
-				m.On("ExecStdinData", []byte("kind: Test2\n"), cmd).Return([]byte("test-2"), nil).Once()
-				m.On("ExecStdinData", []byte("kind: Test3\n"), cmd).Return([]byte("test-3"), nil).Once()
+				m.On("ExecInData", []byte("kind: Test1\n"), cmd).Return([]byte("test-1"), nil).Once()
+				m.On("ExecInData", []byte("kind: Test2\n"), cmd).Return([]byte("test-2"), nil).Once()
+				m.On("ExecInData", []byte("kind: Test3\n"), cmd).Return([]byte("test-3"), nil).Once()
 			},
 			shouldErr: false,
 		},
@@ -41,8 +41,8 @@ func TestResource_Deploy(t *testing.T) {
 				},
 			},
 			prepareMock: func(m *mocked) {
-				m.On("ExecStdinData", []byte("kind: Test1\n"), cmd).Return([]byte("test-1"), nil).Once()
-				m.On("ExecStdinData", []byte("kind: Test2\n"), cmd).Return([]byte("test-2"), nil).Once()
+				m.On("ExecInData", []byte("kind: Test1\n"), cmd).Return([]byte("test-1"), nil).Once()
+				m.On("ExecInData", []byte("kind: Test2\n"), cmd).Return([]byte("test-2"), nil).Once()
 			},
 			shouldErr: false,
 		},
@@ -56,8 +56,8 @@ func TestResource_Deploy(t *testing.T) {
 				},
 			},
 			prepareMock: func(m *mocked) {
-				m.On("ExecStdinData", []byte("kind: Test2\n"), cmd).Return([]byte("test-2"), nil).Once()
-				m.On("ExecStdinData", []byte("kind: Test3\n"), cmd).Return([]byte("test-3"), nil).Once()
+				m.On("ExecInData", []byte("kind: Test2\n"), cmd).Return([]byte("test-2"), nil).Once()
+				m.On("ExecInData", []byte("kind: Test3\n"), cmd).Return([]byte("test-3"), nil).Once()
 			},
 			shouldErr: false,
 		},
@@ -83,7 +83,7 @@ func TestResource_Deploy(t *testing.T) {
 				},
 			},
 			prepareMock: func(m *mocked) {
-				m.On("ExecStdinData", []byte("kind: Test1\n"), cmd).Return(nil, fmt.Errorf("test-err")).Once()
+				m.On("ExecInData", []byte("kind: Test1\n"), cmd).Return(nil, fmt.Errorf("test-err")).Once()
 			},
 			shouldErr: true,
 		},
@@ -107,7 +107,7 @@ type mocked struct {
 	mock.Mock
 }
 
-func (m *mocked) ExecStdinData(data []byte, arg ...string) ([]byte, error) {
+func (m *mocked) ExecInData(data []byte, arg ...string) ([]byte, error) {
 	args := m.Called(data, arg)
 	res := args.Get(0)
 	if res == nil {

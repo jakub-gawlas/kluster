@@ -85,7 +85,7 @@ func FakeStdout(data []byte) []byte {
 	return r
 }
 
-func FakeStringStdout(str string) string {
+func FakeStdoutString(str string) string {
 	idx := strings.Index(str, "PASS")
 	if idx == -1 {
 		return str

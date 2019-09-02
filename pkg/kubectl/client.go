@@ -3,6 +3,7 @@ package kubectl
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os/exec"
 )
 
@@ -22,19 +23,27 @@ func New(kubeconfigPath string) *Client {
 	}
 }
 
-func (cli *Client) ExecStdinData(data []byte, arg ...string) ([]byte, error) {
-	var stdout, stderr bytes.Buffer
+func (cli *Client) ExecStdInOut(stdin io.Reader, stdout io.Writer, arg ...string) error {
+	var stderr bytes.Buffer
 	cmd := execCommand(kubectlCmd, arg...)
 	cmd.Env = []string{"KUBECONFIG=" + cli.kubeconfig}
-	cmd.Stdout = &stdout
+	cmd.Stdin = stdin
+	cmd.Stdout = stdout
 	cmd.Stderr = &stderr
-	cmd.Stdin = bytes.NewReader(data)
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf(stderr.String())
+		return fmt.Errorf(stderr.String())
+	}
+	return nil
+}
+
+func (cli *Client) ExecInData(data []byte, arg ...string) ([]byte, error) {
+	var stdout bytes.Buffer
+	if err := cli.ExecStdInOut(bytes.NewReader(data), &stdout, arg...); err != nil {
+		return nil, err
 	}
 	return stdout.Bytes(), nil
 }
 
 func (cli *Client) Exec(arg ...string) ([]byte, error) {
-	return cli.ExecStdinData(nil, arg...)
+	return cli.ExecInData(nil, arg...)
 }

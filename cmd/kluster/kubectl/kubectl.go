@@ -46,12 +46,7 @@ func runE(flags *flagpole, args []string) error {
 	}
 
 	kube := kubectl.New(kubeconfig)
-	res, err := kube.Exec(args...)
-	if err != nil {
-		return err
-	}
-
-	if _, err := os.Stdout.Write(res); err != nil {
+	if err := kube.ExecStdInOut(os.Stdin, os.Stdout, args...); err != nil {
 		return err
 	}
 

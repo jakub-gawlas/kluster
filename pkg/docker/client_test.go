@@ -38,7 +38,7 @@ func TestClient_BuildImageWithChecksum(t *testing.T) {
 					assert.NoError(t, err)
 				case 2:
 					assert.Equal(t, []string{"docker", "tag", "temp-image"}, info.Args[:3])
-					assert.Equal(t, "test-svc:some-hash", tests.FakeStringStdout(info.Args[3]))
+					assert.Equal(t, "test-svc:some-hash", tests.FakeStdoutString(info.Args[3]))
 				default:
 					panic("too many executions")
 				}
@@ -160,8 +160,8 @@ func TestClient_BuildImageWithChecksum(t *testing.T) {
 			defer func() { execCommand = exec.Command }()
 
 			actualImage, err := c.givenCli.BuildImageWithChecksum(c.givenDockerfile, c.givenImageName)
-			actualImage.Tag = tests.FakeStringStdout(actualImage.Tag)
-			actualImage.FullName = tests.FakeStringStdout(actualImage.FullName)
+			actualImage.Tag = tests.FakeStdoutString(actualImage.Tag)
+			actualImage.FullName = tests.FakeStdoutString(actualImage.FullName)
 
 			assert.Equal(t, c.expectedImage, actualImage)
 
