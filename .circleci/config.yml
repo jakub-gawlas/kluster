@@ -3,10 +3,8 @@ jobs:
   build:
     docker:
       - image: circleci/golang:1.12
-
     environment:
       TEST_RESULTS: /tmp/test-results
-
     steps:
       - checkout
       - run: mkdir -p $TEST_RESULTS
@@ -15,21 +13,25 @@ jobs:
           command: |
             go test -coverprofile $TEST_RESULTS/cover.out -race ./...
             go tool cover -html=$TEST_RESULTS/cover.out -o $TEST_RESULTS/cover.html
-      - run:
-          name: Build binary
-          command: go build
-      - run:
-          name: Run example
-          command: |
-            mv ./kluster ./example/kluster
-            cd example
-            ./kluster deploy
-
       - store_artifacts:
           path: /tmp/test-results
           destination: test-results
       - store_test_results:
           path: /tmp/test-results
+
+  test:
+    docker:
+      - image: jakubgawlas/kluster-docker:0.0.2
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Deploy example
+          command: |
+            echo $DOCKER_HOST
+            cd example
+            kluster deploy
 
   release:
     docker:
@@ -44,6 +46,7 @@ workflows:
   build:
     jobs:
       - build
+      - test
   release:
     jobs:
       - release:
