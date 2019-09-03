@@ -15,6 +15,15 @@ jobs:
           command: |
             go test -coverprofile $TEST_RESULTS/cover.out -race ./...
             go tool cover -html=$TEST_RESULTS/cover.out -o $TEST_RESULTS/cover.html
+      - run:
+          name: Build binary
+          command: go build
+      - run:
+          name: Run example
+          command: |
+            mv ./kluster ./example/kluster
+            cd example
+            ./kluster deploy
 
       - store_artifacts:
           path: /tmp/test-results
