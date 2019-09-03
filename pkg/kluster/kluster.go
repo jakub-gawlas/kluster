@@ -39,6 +39,23 @@ func (k Kluster) Cluster() cluster.Cluster {
 	return k.cluster
 }
 
+func (k Kluster) Provision() error {
+	exists, err := k.cluster.Exists()
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		return nil
+	}
+
+	if err := k.cluster.Create(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (k Kluster) Deploy() error {
 	exists, err := k.cluster.Exists()
 	if err != nil {
